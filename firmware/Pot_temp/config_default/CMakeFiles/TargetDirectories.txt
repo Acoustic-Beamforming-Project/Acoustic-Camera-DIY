@@ -1,0 +1,6 @@
+/home/sh3rawy/Documents/exit-tutorial-hell/acoustic-camera-DIY/firmware/Pot_temp/config_default/CMakeFiles/Pot_temp.dir
+/home/sh3rawy/Documents/exit-tutorial-hell/acoustic-camera-DIY/firmware/Pot_temp/config_default/CMakeFiles/edit_cache.dir
+/home/sh3rawy/Documents/exit-tutorial-hell/acoustic-camera-DIY/firmware/Pot_temp/config_default/CMakeFiles/rebuild_cache.dir
+/home/sh3rawy/Documents/exit-tutorial-hell/acoustic-camera-DIY/firmware/Pot_temp/config_default/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+/home/sh3rawy/Documents/exit-tutorial-hell/acoustic-camera-DIY/firmware/Pot_temp/config_default/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+/home/sh3rawy/Documents/exit-tutorial-hell/acoustic-camera-DIY/firmware/Pot_temp/config_default/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
