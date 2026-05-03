@@ -2,7 +2,7 @@
 # Updated for AD7606 16-channel ADC over WIZ820io (W5200) Ethernet
 
 # --- Network ---
-UDP_IP      = "0.0.0.0"
+UDP_IP      = "127.0.0.1"
 UDP_PORT    = 5000          # must match STM32 firmware (was 5005, now 5000)
 BUFFER_SIZE = 2048          # recvfrom ceiling — larger than any expected packet
 
