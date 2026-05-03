@@ -1,7 +1,7 @@
 # config.py — single source of truth for all constants
 
 # --- Network ---
-UDP_IP      = "0.0.0.0"
+UDP_IP      = "127.0.0.1"
 UDP_PORT    = 5005
 BUFFER_SIZE = 4096        # bytes per UDP packet
 
