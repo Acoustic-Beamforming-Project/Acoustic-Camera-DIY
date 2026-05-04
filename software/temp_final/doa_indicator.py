@@ -8,9 +8,9 @@ class DOAIndicator(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("doaDisplay")
-        self.init_ui()
+        self._init_ui()
 
-    def init_ui(self):
+    def _init_ui(self):
         self.setStyleSheet(f"""
             QFrame#doaDisplay {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
