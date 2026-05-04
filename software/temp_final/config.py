@@ -44,19 +44,19 @@ WAVEFORM_RATE_HZ = 30
 SPECTRUM_RATE_HZ = 15
 
 # --- Colors ---
-BG_COLOR = "#12121a"
-PANEL_COLOR = "#161620"
-CARD_COLOR_START = "#1e1e2a"
-CARD_COLOR_END = "#252535"
-ACCENT_COLOR = "#ff3366"
-LIVE_COLOR = "#00ff55"
-TEXT_COLOR = "#d0d0d0"
-BORDER_COLOR = "#353550"
+BG_COLOR        = "#0d0d0d"   # near-black, not navy
+PANEL_COLOR     = "#111111"   # panels, slightly lighter
+CARD_COLOR      = "#161616"   # channel cards — single flat color, no gradient
+ACCENT_COLOR    = "#e8ff47"   # acid yellow-green — punchy, not pink
+LIVE_COLOR      = "#39d353"   # GitHub-green for live indicators
+TEXT_COLOR      = "#c9c9c9"
+DIM_COLOR       = "#555555"   # for secondary labels, axis ticks
+BORDER_COLOR    = "#2a2a2a"   # barely-there borders
 
 # 16 colors — one per channel
 CHANNEL_COLORS = [
-    '#00e5ff', '#ff5252', '#69f0ae', '#ffd740',
-    '#b388ff', '#ff9100', '#40c4ff', '#ff4081',
-    '#e040fb', '#00bcd4', '#8bc34a', '#ff6e40',
-    '#26c6da', '#ef5350', '#ab47bc', '#66bb6a',
+    '#38bdf8', '#f87171', '#4ade80', '#facc15',
+    '#c084fc', '#fb923c', '#22d3ee', '#f472b6',
+    '#a78bfa', '#34d399', '#818cf8', '#fb7185',
+    '#2dd4bf', '#e879f9', '#86efac', '#fbbf24',
 ]
