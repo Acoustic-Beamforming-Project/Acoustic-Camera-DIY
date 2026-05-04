@@ -2,7 +2,7 @@
 # Updated for AD7606 16-channel ADC over WIZ820io (W5200) Ethernet
 
 # --- Network ---
-UDP_IP      = "127.0.0.1"
+UDP_IP      = "127.0.0.1"   # Enter your IP -Static define it the same as maentione in firmware- 
 UDP_PORT    = 5000          # must match STM32 firmware (was 5005, now 5000)
 BUFFER_SIZE = 2048          # recvfrom ceiling — larger than any expected packet
 
@@ -11,10 +11,10 @@ BUFFER_SIZE = 2048          # recvfrom ceiling — larger than any expected pack
 # Frame layout (36 bytes):
 #   [0:4]  sync word 0xDEADBEEF  (big-endian uint32)
 #   [4:36] CH0..CH15              (big-endian int16, 16 values x 2 bytes = 32 bytes)
-FRAMES_PER_BATCH   = 4
+FRAMES_PER_BATCH   = 32
 FRAME_SIZE         = 36          # 4 sync bytes + 16 channels x 2 bytes
 SYNC_WORD          = 0xDEADBEEF
-EXPECTED_PKT_SIZE  = FRAMES_PER_BATCH * FRAME_SIZE   # = 144 bytes
+EXPECTED_PKT_SIZE  = FRAMES_PER_BATCH * FRAME_SIZE   # = 1152 bytes
 
 # --- Hardware ---
 N_CHANNELS     = 16         # AD7606 has 16 channels (was 8)
@@ -31,8 +31,8 @@ SPEED_OF_SOUND = 343.0      # m/s
 # We accumulate ACCUMULATE_PACKETS packets before running SRP-PHAT.
 # 4 samples/pkt x 64 pkts = 256 samples — same block size as before.
 SAMPLES_PER_PACKET = FRAMES_PER_BATCH          # = 4 samples per channel per packet
-ACCUMULATE_PACKETS = 64                        # collect this many packets -> one DSP frame
-BLOCK_SIZE         = SAMPLES_PER_PACKET * ACCUMULATE_PACKETS   # = 256
+ACCUMULATE_PACKETS = 38                        # collect this many packets -> one DSP frame
+BLOCK_SIZE         = SAMPLES_PER_PACKET * ACCUMULATE_PACKETS   # = 1216
 
 BANDPASS_LOW  = 300
 BANDPASS_HIGH = 3400

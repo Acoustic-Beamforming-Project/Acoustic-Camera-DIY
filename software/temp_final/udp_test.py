@@ -47,7 +47,7 @@ TARGET_ANGLE = 30.0          # degrees — used only in "harmonics" mode
 # ── AD7606 protocol constants — must match config.py ──────────────────────────
 
 N_CHANNELS      = 16
-FRAMES_PER_PKT  = 4
+FRAMES_PER_PKT  = 32
 SYNC_WORD       = 0xDEADBEEF
 FRAME_FMT       = ">I16h"        # big-endian: uint32 sync + 16× int16
 FRAME_SIZE      = struct.calcsize(FRAME_FMT)   # = 36 bytes
