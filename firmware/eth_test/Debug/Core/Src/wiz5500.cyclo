@@ -1,0 +1,17 @@
+../Core/Src/wiz5500.c:53:13:_cs_select	1
+../Core/Src/wiz5500.c:58:13:_cs_deselect	1
+../Core/Src/wiz5500.c:63:13:_spi_write_byte	1
+../Core/Src/wiz5500.c:68:16:_spi_read_byte	1
+../Core/Src/wiz5500.c:75:13:_spi_write_burst	1
+../Core/Src/wiz5500.c:80:13:_spi_read_burst	1
+../Core/Src/wiz5500.c:86:13:_cris_enter	1
+../Core/Src/wiz5500.c:87:13:_cris_exit	1
+../Core/Src/wiz5500.c:92:13:_Wizchip_Conf_Init	1
+../Core/Src/wiz5500.c:111:13:_W5500_HardwareReset	1
+../Core/Src/wiz5500.c:126:13:_W5500_CommonConfig	1
+../Core/Src/wiz5500.c:140:6:WIZ5500_Init	2
+../Core/Src/wiz5500.c:153:16:WIZ5500_SetupSocket0	4
+../Core/Src/wiz5500.c:188:16:WIZ5500_SendBatch	4
+../Core/Src/wiz5500.c:209:10:WIZ5500_GetDroppedPackets	1
+../Core/Src/wiz5500.c:210:10:WIZ5500_IsTxBusy	1
+../Core/Src/wiz5500.c:212:6:WIZ5500_OnDMATxComplete	1

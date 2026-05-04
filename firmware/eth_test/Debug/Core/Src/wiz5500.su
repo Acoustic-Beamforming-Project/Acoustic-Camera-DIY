@@ -1,0 +1,17 @@
+../Core/Src/wiz5500.c:53:13:_cs_select	8	static
+../Core/Src/wiz5500.c:58:13:_cs_deselect	8	static
+../Core/Src/wiz5500.c:63:13:_spi_write_byte	16	static
+../Core/Src/wiz5500.c:68:16:_spi_read_byte	16	static
+../Core/Src/wiz5500.c:75:13:_spi_write_burst	16	static
+../Core/Src/wiz5500.c:80:13:_spi_read_burst	16	static
+../Core/Src/wiz5500.c:86:13:_cris_enter	4	static,ignoring_inline_asm
+../Core/Src/wiz5500.c:87:13:_cris_exit	4	static,ignoring_inline_asm
+../Core/Src/wiz5500.c:92:13:_Wizchip_Conf_Init	8	static
+../Core/Src/wiz5500.c:111:13:_W5500_HardwareReset	8	static
+../Core/Src/wiz5500.c:126:13:_W5500_CommonConfig	8	static
+../Core/Src/wiz5500.c:140:6:WIZ5500_Init	24	static
+../Core/Src/wiz5500.c:153:16:WIZ5500_SetupSocket0	24	static
+../Core/Src/wiz5500.c:188:16:WIZ5500_SendBatch	16	static
+../Core/Src/wiz5500.c:209:10:WIZ5500_GetDroppedPackets	4	static
+../Core/Src/wiz5500.c:210:10:WIZ5500_IsTxBusy	4	static
+../Core/Src/wiz5500.c:212:6:WIZ5500_OnDMATxComplete	4	static
