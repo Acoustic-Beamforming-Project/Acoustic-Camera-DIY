@@ -2,16 +2,17 @@ import sys
 import numpy as np
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QFrame, QScrollArea,
-                             QMessageBox, QStatusBar)
+                             QMessageBox, QStatusBar, QTabWidget)
 from PyQt6.QtCore import Qt, pyqtSlot, QTimer
 from PyQt6.QtGui import QFont
 from config import (UDP_IP, UDP_PORT, N_CHANNELS, SAMPLE_RATE,
                     SCAN_ANGLES, BG_COLOR, PANEL_COLOR, LIVE_COLOR, CHANNEL_COLORS,
-                    EXPECTED_PKT_SIZE, FRAMES_PER_BATCH)
+                    EXPECTED_PKT_SIZE, FRAMES_PER_BATCH, ACCENT_COLOR, BORDER_COLOR)
 from udp_worker import UDPWorker
 from dsp_worker import DSPWorker
 from plot_widgets import ChannelCard, SpectrumPlot
-from channel_zoom import ChannelZoomView          # ← replaces DOAIndicator
+from channel_zoom import ChannelZoomView
+from camera_tab import CameraTab
 
 
 class MainWindow(QMainWindow):
@@ -21,11 +22,9 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1400, 900)
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
-        self._packet_count      = 0
-        self._bad_count         = 0
-        self._udp_pkt_last      = 0
-        self._udp_pkt_per_s     = 0
-        self._udp_pkt_last_raw  = 0
+        self._packet_count     = 0
+        self._udp_pkt_last     = 0
+        self._udp_pkt_last_raw = 0
         self._udp = UDPWorker()
         self._dsp = DSPWorker()
 
@@ -36,10 +35,9 @@ class MainWindow(QMainWindow):
         self._status_timer.timeout.connect(self._update_status_bar)
         self._status_timer.start(1000)
 
-    # ── Status Bar ────────────────────────────────────────────────────────────
+    # ── Status bar ────────────────────────────────────────────────────────────
 
     def _build_status_bar(self):
-        from PyQt6.QtWidgets import QStatusBar
         bar = QStatusBar()
         bar.setSizeGripEnabled(False)
         bar.setStyleSheet(f"""
@@ -54,53 +52,46 @@ class MainWindow(QMainWindow):
         """)
         self.setStatusBar(bar)
 
-        def _seg(icon: str, key: str, default: str, accent: str = "#555555"):
+        def _seg(icon, key, default, accent="#555555"):
             seg = QFrame()
-            seg.setStyleSheet(f"""
-                QFrame {{
+            seg.setStyleSheet("""
+                QFrame {
                     background: #161616;
                     border: 1px solid #2a2a2a;
                     border-radius: 3px;
-                    padding: 0px 6px;
-                }}
+                }
             """)
             h = QHBoxLayout(seg)
             h.setContentsMargins(6, 2, 6, 2)
             h.setSpacing(5)
+            for txt, color, font in [
+                (icon,    accent,    QFont("Segoe UI", 8)),
+                (key,     "#444444", QFont("Segoe UI", 8)),
+            ]:
+                l = QLabel(txt)
+                l.setFont(font)
+                l.setStyleSheet(f"color: {color}; border: none; background: none;")
+                h.addWidget(l)
+            val = QLabel(default)
+            val.setFont(QFont("Consolas", 9, QFont.Weight.Bold))
+            val.setStyleSheet(f"color: {accent}; border: none; background: none;")
+            val.setMinimumWidth(52)
+            h.addWidget(val)
+            return seg, val
 
-            icon_lbl = QLabel(icon)
-            icon_lbl.setFont(QFont("Segoe UI", 8))
-            icon_lbl.setStyleSheet(f"color: {accent}; border: none; background: none;")
+        pkt_seg,  self._sb_pkt_s = _seg("▲", "PKT/s", "—",               ACCENT_COLOR)
+        dsp_seg,  self._sb_dsp_s = _seg("⚙", "DSP/s", "—",               LIVE_COLOR)
+        rate_seg, self._sb_rate  = _seg("♪", "RATE",  f"{SAMPLE_RATE} Hz", "#38bdf8")
+        ch_seg,   self._sb_ch    = _seg("≡", "CH",    f"{N_CHANNELS}",     "#c084fc")
+        pkt_seg2, self._sb_pkt_b = _seg("□", "PKT",   f"{EXPECTED_PKT_SIZE} B", "#555555")
 
-            key_lbl = QLabel(key)
-            key_lbl.setFont(QFont("Segoe UI", 8))
-            key_lbl.setStyleSheet("color: #444444; border: none; background: none;")
-
-            val_lbl = QLabel(default)
-            val_lbl.setFont(QFont("Consolas", 9, QFont.Weight.Bold))
-            val_lbl.setStyleSheet(f"color: {accent}; border: none; background: none;")
-            val_lbl.setMinimumWidth(52)
-
-            h.addWidget(icon_lbl)
-            h.addWidget(key_lbl)
-            h.addWidget(val_lbl)
-            return seg, val_lbl
-
-        from config import ACCENT_COLOR, LIVE_COLOR
-
-        pkt_seg,   self._sb_pkt_s  = _seg("▲", "PKT/s",  "—",    ACCENT_COLOR)
-        dsp_seg,   self._sb_dsp_s  = _seg("⚙", "DSP/s",  "—",    LIVE_COLOR)
-        rate_seg,  self._sb_rate   = _seg("♪", "RATE",   f"{SAMPLE_RATE} Hz", "#38bdf8")
-        ch_seg,    self._sb_ch     = _seg("≡", "CH",      f"{N_CHANNELS}",     "#c084fc")
-        pkt_b_seg, self._sb_pkt_b  = _seg("□", "PKT",     f"{EXPECTED_PKT_SIZE} B", "#555555")
-
-        for w in (pkt_seg, dsp_seg, rate_seg, ch_seg, pkt_b_seg):
+        for w in (pkt_seg, dsp_seg, rate_seg, ch_seg, pkt_seg2):
             bar.addWidget(w)
 
         tot_seg, self._sb_total = _seg("Σ", "TOTAL", "0 pkts", "#444444")
         bar.addPermanentWidget(tot_seg)
 
-    # ── UI Construction ────────────────────────────────────────────────────────
+    # ── UI construction ────────────────────────────────────────────────────────
 
     def init_ui(self):
         central = QWidget()
@@ -110,7 +101,53 @@ class MainWindow(QMainWindow):
         root.setSpacing(8)
 
         root.addWidget(self._build_header())
-        root.addLayout(self._build_body(), stretch=1)
+
+        # ── Tab widget ────────────────────────────────────────────────────────
+        self._tabs = QTabWidget()
+        self._tabs.setStyleSheet(f"""
+            QTabWidget::pane {{
+                border: 1px solid {BORDER_COLOR};
+                border-radius: 6px;
+                background: {BG_COLOR};
+                margin-top: -1px;
+            }}
+            QTabBar::tab {{
+                background: #161616;
+                color: #555555;
+                border: 1px solid {BORDER_COLOR};
+                border-bottom: none;
+                border-radius: 5px 5px 0 0;
+                padding: 6px 20px;
+                font-family: "Segoe UI";
+                font-size: 9pt;
+                font-weight: bold;
+                letter-spacing: 1px;
+                min-width: 140px;
+            }}
+            QTabBar::tab:selected {{
+                background: #252535;
+                color: {ACCENT_COLOR};
+                border-color: #404060;
+            }}
+            QTabBar::tab:hover:!selected {{
+                background: #1e1e2e;
+                color: #888888;
+            }}
+        """)
+
+        # Tab 1 — radar
+        radar_widget = QWidget()
+        radar_layout = QVBoxLayout(radar_widget)
+        radar_layout.setContentsMargins(0, 8, 0, 0)
+        radar_layout.setSpacing(8)
+        radar_layout.addLayout(self._build_body(), stretch=1)
+        self._tabs.addTab(radar_widget, "⬡  RADAR  /  DSP")
+
+        # Tab 2 — camera
+        self._camera_tab = CameraTab()
+        self._tabs.addTab(self._camera_tab, "◉  ACOUSTIC CAMERA")
+
+        root.addWidget(self._tabs, stretch=1)
         self._build_status_bar()
 
     def _build_header(self) -> QFrame:
@@ -124,6 +161,7 @@ class MainWindow(QMainWindow):
             }
         """)
         lay = QHBoxLayout(frame)
+        lay.setContentsMargins(12, 6, 12, 6)
 
         title = QLabel("ACOUSTIC DOA RADAR  —  AD7606  |  16 CH  |  ±5 V")
         title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
@@ -136,12 +174,12 @@ class MainWindow(QMainWindow):
 
         self.ip_input   = QLineEdit(UDP_IP)
         self.port_input = QLineEdit(str(UDP_PORT))
-        _input_style = (
+        _inp = (
             "background-color: #1a2a35; color: #00ccff; "
             "border: 1px solid #00ccff40; border-radius: 5px; padding: 4px;"
         )
-        self.ip_input.setStyleSheet(_input_style)
-        self.port_input.setStyleSheet(_input_style)
+        self.ip_input.setStyleSheet(_inp)
+        self.port_input.setStyleSheet(_inp)
         self.port_input.setFixedWidth(55)
 
         lay.addWidget(QLabel("IP:"))
@@ -182,7 +220,7 @@ class MainWindow(QMainWindow):
         body = QHBoxLayout()
         body.setSpacing(8)
 
-        # ── Left panel: 16 channel cards ──────────────────────────────────────
+        # ── Left: channel cards ───────────────────────────────────────────────
         left = QFrame()
         left.setStyleSheet(
             f"background-color: {PANEL_COLOR}; "
@@ -219,14 +257,13 @@ class MainWindow(QMainWindow):
         lp.addWidget(scroll)
         body.addWidget(left, stretch=3)
 
-        # ── Right panel: spectrum (top) + channel zoom (bottom) ───────────────
+        # ── Right: spectrum + channel zoom ────────────────────────────────────
         right = QVBoxLayout()
         right.setSpacing(8)
 
         self.spectrum_plot = SpectrumPlot()
         right.addWidget(self.spectrum_plot, stretch=6)
 
-        # Channel zoom view replaces DOA indicator
         self.channel_zoom = ChannelZoomView()
         right.addWidget(self.channel_zoom, stretch=4)
 
@@ -251,21 +288,16 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(np.ndarray, float, np.ndarray)
     def _on_result(self, waveform: np.ndarray, angle: float, spectrum: np.ndarray):
-        """
-        Called on every processed DSP frame.
-        waveform : (N_CHANNELS, BLOCK_SIZE) float32
-        angle    : DOA estimate in degrees
-        spectrum : (len(SCAN_ANGLES),) float32, values in [0, 1]
-        """
         self._packet_count += 1
 
+        # ── Tab 1: radar ──────────────────────────────────────────────────────
         for i in range(N_CHANNELS):
             self.channel_cards[i].update_data(waveform[i])
-
         self.spectrum_plot.update_spectrum(SCAN_ANGLES, spectrum, angle)
-
-        # Feed the full waveform to the zoom view — it picks the selected channel
         self.channel_zoom.update_channel_data(waveform)
+
+        # ── Tab 2: camera — fan DSP result across regardless of active tab ────
+        self._camera_tab.update_dsp(angle, spectrum)
 
     @pyqtSlot(str)
     def _on_udp_error(self, msg: str):
@@ -313,5 +345,6 @@ class MainWindow(QMainWindow):
             self._sb_dsp_s.setText("—")
 
     def closeEvent(self, event):
+        self._camera_tab._on_stop()   # release webcam cleanly
         self._on_stop()
         super().closeEvent(event)
