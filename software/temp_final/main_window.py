@@ -11,21 +11,21 @@ from config import (UDP_IP, UDP_PORT, N_CHANNELS, SAMPLE_RATE,
 from udp_worker import UDPWorker
 from dsp_worker import DSPWorker
 from plot_widgets import ChannelCard, SpectrumPlot
-from doa_indicator import DOAIndicator
+from channel_zoom import ChannelZoomView          # ← replaces DOAIndicator
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("DOA Radar System — AD7606 16-ch Acoustic Camera")
-        self.setMinimumSize(1400, 900)   # wider to comfortably fit 16 channel cards
+        self.setMinimumSize(1400, 900)
         self.setStyleSheet(f"background-color: {BG_COLOR};")
 
-        self._packet_count      = 0   # DSP frames emitted per second
+        self._packet_count      = 0
         self._bad_count         = 0
-        self._udp_pkt_last      = 0   # last pkt_total snapshot for delta calc
-        self._udp_pkt_per_s     = 0   # smoothed pkt/s shown in the status bar
-        self._udp_pkt_last_raw  = 0   # updated by _on_pkt_counted each packet
+        self._udp_pkt_last      = 0
+        self._udp_pkt_per_s     = 0
+        self._udp_pkt_last_raw  = 0
         self._udp = UDPWorker()
         self._dsp = DSPWorker()
 
@@ -39,12 +39,6 @@ class MainWindow(QMainWindow):
     # ── Status Bar ────────────────────────────────────────────────────────────
 
     def _build_status_bar(self):
-        """
-        Replaces the default QStatusBar with a custom widget row that shows
-        individual labeled segments.  Each segment is just a QLabel — updating
-        them is a single setText() call, which Qt repaints lazily and cheaply.
-        No extra threads, no timers beyond the existing 1 s _status_timer.
-        """
         from PyQt6.QtWidgets import QStatusBar
         bar = QStatusBar()
         bar.setSizeGripEnabled(False)
@@ -61,7 +55,6 @@ class MainWindow(QMainWindow):
         self.setStatusBar(bar)
 
         def _seg(icon: str, key: str, default: str, accent: str = "#555555"):
-            """Return (container QFrame, value QLabel) for one status segment."""
             seg = QFrame()
             seg.setStyleSheet(f"""
                 QFrame {{
@@ -95,20 +88,16 @@ class MainWindow(QMainWindow):
 
         from config import ACCENT_COLOR, LIVE_COLOR
 
-        # PKT/s — most prominent, accent yellow
-        pkt_seg,   self._sb_pkt_s    = _seg("▲", "PKT/s",    "—",    ACCENT_COLOR)
-        # DSP frames/s — green
-        dsp_seg,   self._sb_dsp_s    = _seg("⚙", "DSP/s",    "—",    LIVE_COLOR)
-        # Fixed-info segments (never change after connect)
-        rate_seg,  self._sb_rate     = _seg("♪", "RATE",     f"{SAMPLE_RATE} Hz", "#38bdf8")
-        ch_seg,    self._sb_ch       = _seg("≡", "CH",        f"{N_CHANNELS}",      "#c084fc")
-        pkt_b_seg, self._sb_pkt_b   = _seg("□", "PKT",       f"{EXPECTED_PKT_SIZE} B", "#555555")
+        pkt_seg,   self._sb_pkt_s  = _seg("▲", "PKT/s",  "—",    ACCENT_COLOR)
+        dsp_seg,   self._sb_dsp_s  = _seg("⚙", "DSP/s",  "—",    LIVE_COLOR)
+        rate_seg,  self._sb_rate   = _seg("♪", "RATE",   f"{SAMPLE_RATE} Hz", "#38bdf8")
+        ch_seg,    self._sb_ch     = _seg("≡", "CH",      f"{N_CHANNELS}",     "#c084fc")
+        pkt_b_seg, self._sb_pkt_b  = _seg("□", "PKT",     f"{EXPECTED_PKT_SIZE} B", "#555555")
 
         for w in (pkt_seg, dsp_seg, rate_seg, ch_seg, pkt_b_seg):
             bar.addWidget(w)
 
-        # Right-side: total packet counter
-        tot_seg, self._sb_total = _seg("Σ", "TOTAL",  "0 pkts", "#444444")
+        tot_seg, self._sb_total = _seg("Σ", "TOTAL", "0 pkts", "#444444")
         bar.addPermanentWidget(tot_seg)
 
     # ── UI Construction ────────────────────────────────────────────────────────
@@ -145,7 +134,6 @@ class MainWindow(QMainWindow):
         lay.addWidget(title)
         lay.addStretch()
 
-        # IP / Port inputs
         self.ip_input   = QLineEdit(UDP_IP)
         self.port_input = QLineEdit(str(UDP_PORT))
         _input_style = (
@@ -161,7 +149,6 @@ class MainWindow(QMainWindow):
         lay.addWidget(QLabel(":"))
         lay.addWidget(self.port_input)
 
-        # Buttons
         self.btn_connect = QPushButton("CONNECT")
         self.btn_connect.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         self.btn_connect.setStyleSheet("""
@@ -195,7 +182,7 @@ class MainWindow(QMainWindow):
         body = QHBoxLayout()
         body.setSpacing(8)
 
-        # ── Left panel: 16 channel cards in a scroll area ──────────────────
+        # ── Left panel: 16 channel cards ──────────────────────────────────────
         left = QFrame()
         left.setStyleSheet(
             f"background-color: {PANEL_COLOR}; "
@@ -232,15 +219,16 @@ class MainWindow(QMainWindow):
         lp.addWidget(scroll)
         body.addWidget(left, stretch=3)
 
-        # ── Right panel: spectrum + DOA indicator ───────────────────────────
+        # ── Right panel: spectrum (top) + channel zoom (bottom) ───────────────
         right = QVBoxLayout()
         right.setSpacing(8)
 
         self.spectrum_plot = SpectrumPlot()
         right.addWidget(self.spectrum_plot, stretch=6)
 
-        self.doa_indicator = DOAIndicator()
-        right.addWidget(self.doa_indicator, stretch=4)
+        # Channel zoom view replaces DOA indicator
+        self.channel_zoom = ChannelZoomView()
+        right.addWidget(self.channel_zoom, stretch=4)
 
         body.addLayout(right, stretch=5)
         return body
@@ -259,8 +247,7 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(int)
     def _on_pkt_counted(self, total: int):
-        """Receives the running packet total from UDPWorker — O(1), no work done here."""
-        self._udp_pkt_last_raw = total   # _update_status_bar diffs against previous snapshot
+        self._udp_pkt_last_raw = total
 
     @pyqtSlot(np.ndarray, float, np.ndarray)
     def _on_result(self, waveform: np.ndarray, angle: float, spectrum: np.ndarray):
@@ -276,7 +263,9 @@ class MainWindow(QMainWindow):
             self.channel_cards[i].update_data(waveform[i])
 
         self.spectrum_plot.update_spectrum(SCAN_ANGLES, spectrum, angle)
-        self.doa_indicator.set_angle(angle)
+
+        # Feed the full waveform to the zoom view — it picks the selected channel
+        self.channel_zoom.update_channel_data(waveform)
 
     @pyqtSlot(str)
     def _on_udp_error(self, msg: str):
@@ -300,21 +289,17 @@ class MainWindow(QMainWindow):
     def _update_status_bar(self):
         running = self._udp.isRunning()
 
-        # ── PKT/s: diff the running counter against last snapshot ──────────
         current_total = self._udp_pkt_last_raw
         pkt_delta     = current_total - self._udp_pkt_last
         self._udp_pkt_last = current_total
 
-        # ── DSP frames/s (counted in _on_result) ───────────────────────────
-        dsp_fps           = self._packet_count
+        dsp_fps            = self._packet_count
         self._packet_count = 0
 
         if running:
-            # Colour PKT/s green when healthy (≥ expected ~200 pkt/s from firmware),
-            # amber when low, dim when idle.  Threshold is soft — adjust to taste.
             pkt_color = (
                 "#39d353" if pkt_delta >= 150 else
-                "#facc15" if pkt_delta > 0   else
+                "#facc15" if pkt_delta > 0    else
                 "#555555"
             )
             self._sb_pkt_s.setText(f"{pkt_delta}")
