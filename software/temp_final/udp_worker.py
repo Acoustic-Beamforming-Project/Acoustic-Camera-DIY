@@ -48,12 +48,18 @@ class UDPWorker(QThread):
     packets (= BLOCK_SIZE samples per channel), then emits one float32 array of
     shape (N_CHANNELS, BLOCK_SIZE) for the DSP worker to process.
     """
-    raw_packet = pyqtSignal(np.ndarray)   # shape (N_CHANNELS, BLOCK_SIZE) float32
-    error      = pyqtSignal(str)
+    raw_packet  = pyqtSignal(np.ndarray)   # shape (N_CHANNELS, BLOCK_SIZE) float32
+    error       = pyqtSignal(str)
+    # Emitted once per valid UDP packet — carries a running total so the GUI
+    # can compute pkt/s by differencing two successive values.  Incrementing
+    # an integer and emitting a signal is essentially free compared to the
+    # struct-unpacking already happening in _parse_packet().
+    pkt_counted = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
-        self._running = False
+        self._running    = False
+        self._pkt_total  = 0   # running count of valid packets received
 
     def run(self):
         self._running = True
@@ -91,6 +97,11 @@ class UDPWorker(QThread):
             frame = _parse_packet(data)
             if frame is None:
                 continue   # bad size or bad sync — discard silently
+
+            # Count every valid packet and tell the GUI (just an int increment +
+            # signal emit — negligible overhead versus the struct unpack above).
+            self._pkt_total += 1
+            self.pkt_counted.emit(self._pkt_total)
 
             # frame.shape = (16, 4): write 4 new samples into the buffer
             end = col + SAMPLES_PER_PACKET

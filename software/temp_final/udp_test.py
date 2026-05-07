@@ -41,7 +41,7 @@ import numpy as np
 
 MODE         = "harmonics"   # "harmonics" | "sweep" | "noise"
 TARGET_IP    = "127.0.0.1"   # destination IP  (loopback = same PC)
-TARGET_PORT  = 5000          # must match UDP_PORT in config.py
+TARGET_PORT  = 5002          # must match UDP_PORT in config.py
 TARGET_ANGLE = 30.0          # degrees — used only in "harmonics" mode
 
 # ── AD7606 protocol constants — must match config.py ──────────────────────────
