@@ -14,6 +14,7 @@ from dsp_worker import DSPWorker
 from plot_widgets import ChannelCard, SpectrumPlot
 from channel_zoom import ChannelZoomView
 from camera_overlay import CameraOverlayView
+from doa_filter_view import DOAFilterView
 
 
 class MainWindow(QMainWindow):
@@ -222,6 +223,11 @@ class MainWindow(QMainWindow):
         self.camera_overlay = CameraOverlayView()
         tabs.addTab(self.camera_overlay, "◉  ACOUSTIC CAMERA")
 
+        # ── Tab 2: DOA Spatial Filter ─────────────────────────────────────────
+        self.doa_filter_view = DOAFilterView()
+        tabs.addTab(self.doa_filter_view, "⊕  DOA FILTER")
+
+
         return tabs
 
     def _build_channel_panel(self) -> QVBoxLayout:
@@ -283,6 +289,7 @@ class MainWindow(QMainWindow):
         self._udp.pkt_counted.connect(self._on_pkt_counted)
         self.btn_connect.clicked.connect(self._on_connect)
         self.btn_stop.clicked.connect(self._on_stop)
+        self._dsp.result.connect(self.doa_filter_view.on_result)
 
     # ── Slots ─────────────────────────────────────────────────────────────────
 
