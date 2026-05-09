@@ -11,14 +11,14 @@ BUFFER_SIZE = 2048          # recvfrom ceiling — larger than any expected pack
 # Frame layout (36 bytes):
 #   [0:4]  sync word 0xDEADBEEF  (big-endian uint32)
 #   [4:36] CH0..CH15              (big-endian int16, 16 values x 2 bytes = 32 bytes)
-FRAMES_PER_BATCH   = 32
+FRAMES_PER_BATCH   = 40
 FRAME_SIZE         = 36          # 4 sync bytes + 16 channels x 2 bytes
 SYNC_WORD          = 0xDEADBEEF
 EXPECTED_PKT_SIZE  = FRAMES_PER_BATCH * FRAME_SIZE   # = 1152 bytes
 
 # --- Hardware ---
 N_CHANNELS     = 16         # AD7606 has 16 channels (was 8)
-SAMPLE_RATE    = 48000      # Hz — must match STM32 ADC configuration
+SAMPLE_RATE    = 37000      # Hz — must match STM32 ADC configuration
 ADC_BITS       = 16
 VREF_MV        = 5000       # ±5 V range (RANGE pin = GND on AD7606)
 FULLSCALE_CODE = 32767      # 0x7FFF — max positive int16
